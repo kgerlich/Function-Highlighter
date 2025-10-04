@@ -5,5 +5,7 @@ src/**
 .yarnrc
 tsconfig.json
 test-sample.c
+test-parser.js
 node_modules/**
+!node_modules/web-tree-sitter/**
 *.vsix

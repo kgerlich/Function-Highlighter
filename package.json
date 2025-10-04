@@ -1,11 +1,15 @@
 {
   "name": "function-highlighter",
   "displayName": "Function Highlighter",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Highlights C/C++ functions with distinct pastel colors",
-  "publisher": "functionhighlight",
+  "publisher": "KlausGerlicher",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kgerlich/Function-Highlighter"
+  },
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.104.0"
   },
   "categories": [
     "Programming Languages",
