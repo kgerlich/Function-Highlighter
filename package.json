@@ -1,0 +1,73 @@
+{
+  "name": "function-highlighter",
+  "displayName": "Function Highlighter",
+  "version": "0.9.0",
+  "description": "Highlights C/C++ functions with distinct pastel colors",
+  "publisher": "functionhighlight",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onLanguage:c",
+    "onLanguage:cpp"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Function Highlight",
+      "properties": {
+        "functionHighlight.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable function highlighting"
+        },
+        "functionHighlight.minLines": {
+          "type": "number",
+          "default": 5,
+          "description": "Minimum function length (lines) for minimum brightness"
+        },
+        "functionHighlight.maxLines": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum function length (lines) for maximum brightness"
+        },
+        "functionHighlight.baseColor": {
+          "type": "string",
+          "default": "#ffff00",
+          "description": "Base color for highlighting (yellow by default)"
+        },
+        "functionHighlight.borderWidth": {
+          "type": "number",
+          "default": 5000,
+          "description": "Width of left/right borders in pixels (large value creates full coverage)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "keywords": ["c", "cpp", "highlight", "function"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "@types/vscode": "^1.104.0",
+    "generator-code": "^1.11.13",
+    "typescript": "^5.9.3",
+    "vscode-test": "^1.6.1",
+    "yo": "^5.1.0"
+  },
+  "dependencies": {
+    "web-tree-sitter": "^0.25.10"
+  }
+}
