@@ -6,6 +6,7 @@ export interface FunctionInfo {
     startLine: number;
     endLine: number;
     lineCount: number;
+    declarationLine: number; // Line where the function is declared
 }
 
 type Parser = any;
@@ -113,12 +114,15 @@ export class CppParser {
                     const startLine = bodyNode.startPosition.row;
                     const endLine = bodyNode.endPosition.row;
                     const lineCount = endLine - startLine + 1;
+                    // The declaration line is where the function node starts
+                    const declarationLine = node.startPosition.row;
 
                     functions.push({
                         name: nameNode.text,
                         startLine,
                         endLine,
-                        lineCount
+                        lineCount,
+                        declarationLine
                     });
                 }
             }
