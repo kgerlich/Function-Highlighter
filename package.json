@@ -16,6 +16,7 @@
     "Visualization"
   ],
   "activationEvents": [
+    "onView:functionHighlight.functionsView",
     "onLanguage:c",
     "onLanguage:cpp",
     "onLanguage:python",
@@ -33,6 +34,43 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "functionHighlight",
+          "title": "Function Highlight",
+          "icon": "resources/function-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "functionHighlight": [
+        {
+          "id": "functionHighlight.functionsView",
+          "name": "Functions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "functionHighlight.goToFunction",
+        "title": "Go to Function"
+      },
+      {
+        "command": "functionHighlight.refreshFunctions",
+        "title": "Refresh Function List",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "functionHighlight.refreshFunctions",
+          "when": "view == functionHighlight.functionsView",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Function Highlight",
       "properties": {

@@ -3,11 +3,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { CppParser, FunctionInfo } from './parser';
 import { ColorCalculator, ColorConfig } from './colorCalculator';
+import { FunctionTreeProvider } from './functionTreeProvider';
 
 let parser: CppParser;
 let colorCalculator: ColorCalculator;
 let decorationCache: Map<string, vscode.TextEditorDecorationType[]> = new Map();
 let extensionContext: vscode.ExtensionContext;
+let functionTreeProvider: FunctionTreeProvider;
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('Function Highlight extension is now active');
@@ -19,6 +21,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize parser and color calculator
     parser = new CppParser();
     colorCalculator = new ColorCalculator();
+    functionTreeProvider = new FunctionTreeProvider(colorCalculator, context);
 
     try {
         console.log('Initializing parser...');
@@ -30,6 +33,31 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage(errorMsg);
         return;
     }
+
+    // Register tree view
+    const treeView = vscode.window.createTreeView('functionHighlight.functionsView', {
+        treeDataProvider: functionTreeProvider,
+        showCollapseAll: false
+    });
+    context.subscriptions.push(treeView);
+
+    // Register commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('functionHighlight.goToFunction',
+            (functionInfo: FunctionInfo, document: vscode.TextDocument) => {
+                goToFunction(functionInfo, document);
+            }
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('functionHighlight.refreshFunctions', () => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                updateDecorations(editor);
+            }
+        })
+    );
 
     // Update decorations when active editor changes
     context.subscriptions.push(
@@ -68,6 +96,18 @@ export async function activate(context: vscode.ExtensionContext) {
     if (vscode.window.activeTextEditor) {
         updateDecorations(vscode.window.activeTextEditor);
     }
+}
+
+function goToFunction(functionInfo: FunctionInfo, document: vscode.TextDocument): void {
+    // Open the document and reveal the function declaration line
+    vscode.window.showTextDocument(document).then(editor => {
+        const position = new vscode.Position(functionInfo.declarationLine, 0);
+        const range = new vscode.Range(position, position);
+
+        // Reveal and select the line
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+        editor.selection = new vscode.Selection(position, position);
+    });
 }
 
 function clearDecorations(documentUri: string) {
@@ -119,10 +159,14 @@ async function updateDecorations(editor: vscode.TextEditor) {
         const functions = parser.parseFunctions(sourceCode);
         console.log(`Found ${functions.length} functions:`, functions);
 
+        // Update tree view with parsed functions
         if (functions.length === 0) {
             console.log('No functions found');
+            functionTreeProvider.clear();
             return;
         }
+
+        functionTreeProvider.updateFunctions(functions, document);
 
         // Use fixed defaults
         const colorConfig: ColorConfig = {

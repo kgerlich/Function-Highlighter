@@ -21,7 +21,14 @@ This is a VS Code extension that highlights functions with distinct pastel color
 - `src/extension.ts`: Main extension that registers VS Code event handlers and applies text decorations
   - Async language loading before parsing
   - Per-document decoration cache
+  - Gutter icon generation (SVG files)
+  - Tree view registration and commands
+- `src/functionTreeProvider.ts`: TreeDataProvider for function list sidebar
+  - Implements VS Code TreeDataProvider interface
+  - Creates color-coded tree items with numbered icons
+  - Handles click-to-navigate functionality
 - `grammars/`: Tree-sitter WASM grammar files for all supported languages
+- `resources/`: Extension icons (Activity Bar icon)
 
 **Key Design Decisions:**
 - Uses tree-sitter for accurate AST-based parsing (not regex)
@@ -30,7 +37,9 @@ This is a VS Code extension that highlights functions with distinct pastel color
 - Brightness slightly increases with function length (subtle visual cue)
 - Semi-transparent color overlays don't interfere with syntax highlighting
 - Bright, opaque colors in minimap/scrollbar for easy navigation
-- Fixed configuration (only `enabled` setting is configurable)
+- Gutter decorations: arrow on declaration, vertical line on body, ball end on last line
+- Function list sidebar with Activity Bar integration
+- Fixed configuration (only `enabled` and `disabledLanguages` settings)
 
 ## Development Commands
 

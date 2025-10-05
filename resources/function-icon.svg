@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Simple function icon with f(x) style -->
+  <path fill="#C5C5C5" d="M8 6h2v2H8V6zm0 4h2v2H8v-2zm0 4h2v2H8v-2zm6-8h2v2h-2V6zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+  <path fill="#C5C5C5" d="M6 4v16h12V4H6zm10 14H8V6h8v12z"/>
+  <circle cx="12" cy="12" r="2" fill="#75BEFF"/>
+</svg>
