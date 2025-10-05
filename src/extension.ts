@@ -218,6 +218,7 @@ async function updateDecorations(editor: vscode.TextEditor) {
             const arrowSvgPath = createGutterArrowIcon(borderColor);
             const lineSvgPath = createGutterLineIcon(borderColor);
             const lineEndSvgPath = createGutterLineEndIcon(borderColor);
+            const singleLineSvgPath = createGutterSingleLineIcon(borderColor);
 
             // Create gutter line decoration for function body (vertical line in gutter)
             const gutterLineType = vscode.window.createTextEditorDecorationType({
@@ -261,14 +262,27 @@ async function updateDecorations(editor: vscode.TextEditor) {
                 overviewRulerLane: vscode.OverviewRulerLane.Left,
             });
 
+            // Create single-line decoration (arrow + line + ball combined)
+            const gutterSingleLineType = vscode.window.createTextEditorDecorationType({
+                gutterIconPath: singleLineSvgPath,
+                gutterIconSize: 'auto',
+                light: {
+                    gutterIconPath: singleLineSvgPath,
+                },
+                dark: {
+                    gutterIconPath: singleLineSvgPath,
+                },
+                overviewRulerColor: brightMinimapColor,
+                overviewRulerLane: vscode.OverviewRulerLane.Left,
+            });
+
             console.log(`Creating gutter decorations for ${func.name}:`);
             console.log(`  - Border color: ${borderColor}`);
             console.log(`  - Bright color: ${brightMinimapColor}`);
             console.log(`  - Arrow icon: ${arrowSvgPath}`);
             console.log(`  - Line icon: ${lineSvgPath}`);
             console.log(`  - Line end icon: ${lineEndSvgPath}`);
-
-            newDecorations.push(borderType, gutterLineType, gutterLineEndType, gutterArrowType);
+            console.log(`  - Single line icon: ${singleLineSvgPath}`);
 
             // Apply border to entire function range
             const functionRange = new vscode.Range(
@@ -276,37 +290,57 @@ async function updateDecorations(editor: vscode.TextEditor) {
                 new vscode.Position(func.endLine, Number.MAX_SAFE_INTEGER)
             );
 
-            // Apply gutter line to function body (excluding declaration and last line)
-            const bodyRanges: vscode.Range[] = [];
-            for (let line = func.declarationLine + 1; line < func.endLine; line++) {
-                bodyRanges.push(new vscode.Range(
-                    new vscode.Position(line, 0),
-                    new vscode.Position(line, Number.MAX_SAFE_INTEGER)
-                ));
-            }
-
-            // Apply arrow only to the function declaration line
-            const arrowRange = new vscode.Range(
-                new vscode.Position(func.declarationLine, 0),
-                new vscode.Position(func.declarationLine, Number.MAX_SAFE_INTEGER)
-            );
-
-            // Apply line end (with ball) to the last line of the function
-            const lineEndRange = new vscode.Range(
-                new vscode.Position(func.endLine, 0),
-                new vscode.Position(func.endLine, Number.MAX_SAFE_INTEGER)
-            );
-
-            console.log(`Applying decorations for ${func.name}:`);
-            console.log(`  - Declaration line: ${func.declarationLine} (arrow)`);
-            console.log(`  - Body lines: ${func.declarationLine + 1}-${func.endLine - 1} (line)`);
-            console.log(`  - End line: ${func.endLine} (line with ball)`);
-            console.log(`  - Gutter line ranges: ${bodyRanges.length} lines`);
-
             editor.setDecorations(borderType, [functionRange]);
-            editor.setDecorations(gutterLineType, bodyRanges);
-            editor.setDecorations(gutterLineEndType, [lineEndRange]);
-            editor.setDecorations(gutterArrowType, [arrowRange]);
+
+            // Check if this is a single-line function
+            const isSingleLine = func.declarationLine === func.endLine;
+
+            if (isSingleLine) {
+                // For single-line functions, use the combined icon
+                const singleLineRange = new vscode.Range(
+                    new vscode.Position(func.declarationLine, 0),
+                    new vscode.Position(func.declarationLine, Number.MAX_SAFE_INTEGER)
+                );
+
+                console.log(`Applying decorations for ${func.name} (single-line):`);
+                console.log(`  - Line ${func.declarationLine}: arrow + line + ball`);
+
+                newDecorations.push(borderType, gutterSingleLineType);
+                editor.setDecorations(gutterSingleLineType, [singleLineRange]);
+            } else {
+                // For multi-line functions, use separate icons
+                // Apply gutter line to function body (excluding declaration and last line)
+                const bodyRanges: vscode.Range[] = [];
+                for (let line = func.declarationLine + 1; line < func.endLine; line++) {
+                    bodyRanges.push(new vscode.Range(
+                        new vscode.Position(line, 0),
+                        new vscode.Position(line, Number.MAX_SAFE_INTEGER)
+                    ));
+                }
+
+                // Apply arrow only to the function declaration line
+                const arrowRange = new vscode.Range(
+                    new vscode.Position(func.declarationLine, 0),
+                    new vscode.Position(func.declarationLine, Number.MAX_SAFE_INTEGER)
+                );
+
+                // Apply line end (with ball) to the last line of the function
+                const lineEndRange = new vscode.Range(
+                    new vscode.Position(func.endLine, 0),
+                    new vscode.Position(func.endLine, Number.MAX_SAFE_INTEGER)
+                );
+
+                console.log(`Applying decorations for ${func.name} (multi-line):`);
+                console.log(`  - Declaration line: ${func.declarationLine} (arrow)`);
+                console.log(`  - Body lines: ${func.declarationLine + 1}-${func.endLine - 1} (line)`);
+                console.log(`  - End line: ${func.endLine} (line with ball)`);
+                console.log(`  - Gutter line ranges: ${bodyRanges.length} lines`);
+
+                newDecorations.push(borderType, gutterLineType, gutterLineEndType, gutterArrowType);
+                editor.setDecorations(gutterLineType, bodyRanges);
+                editor.setDecorations(gutterLineEndType, [lineEndRange]);
+                editor.setDecorations(gutterArrowType, [arrowRange]);
+            }
         });
 
         // Store decorations for cleanup
@@ -389,6 +423,31 @@ function createGutterLineEndIcon(color: string): vscode.Uri {
     fs.writeFileSync(filePath, svgContent);
 
     console.log(`Created line-end icon at: ${filePath}`);
+
+    return vscode.Uri.file(filePath);
+}
+
+function createGutterSingleLineIcon(color: string): vscode.Uri {
+    // Create a combined icon: arrow + vertical line + ball for single-line functions
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+        <polygon points="2,2 14,10 2,18" fill="${color}" stroke="${color}" stroke-width="1" />
+        <rect x="14" y="0" width="4" height="14" fill="${color}" />
+        <circle cx="16" cy="16" r="4" fill="${color}" />
+    </svg>`;
+
+    const fileName = `single-line-${color.substring(1)}.svg`;
+    const filePath = path.join(extensionContext.extensionPath, '.icons', fileName);
+
+    // Ensure .icons directory exists
+    const iconsDir = path.join(extensionContext.extensionPath, '.icons');
+    if (!fs.existsSync(iconsDir)) {
+        fs.mkdirSync(iconsDir, { recursive: true });
+    }
+
+    // Write SVG file
+    fs.writeFileSync(filePath, svgContent);
+
+    console.log(`Created single-line icon at: ${filePath}`);
 
     return vscode.Uri.file(filePath);
 }

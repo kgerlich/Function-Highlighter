@@ -7,6 +7,7 @@ export interface FunctionInfo {
     endLine: number;
     lineCount: number;
     declarationLine: number; // Line where the function is declared
+    className?: string; // Optional class/namespace name
 }
 
 type Parser = any;
@@ -104,7 +105,23 @@ export class CppParser {
         const grammarName = LANGUAGE_GRAMMAR_MAP[this.currentLanguageId];
         const functionNodeTypes = FUNCTION_NODE_TYPES[grammarName] || [];
 
-        const findFunctions = (node: SyntaxNode) => {
+        const findFunctions = (node: SyntaxNode, className?: string) => {
+            // Track class/namespace context
+            let currentClassName = className;
+
+            // Check if this node is a class/struct/namespace
+            if (node.type === 'class_specifier' || node.type === 'struct_specifier' ||
+                node.type === 'class_declaration' || node.type === 'interface_declaration' ||
+                node.type === 'namespace_definition' || node.type === 'impl_item' ||
+                node.type === 'trait_item' || node.type === 'class_definition') {
+
+                // Try to get the class/namespace name
+                const classNameNode = node.childForFieldName('name');
+                if (classNameNode) {
+                    currentClassName = classNameNode.text;
+                }
+            }
+
             // Check if this node is a function definition for the current language
             if (functionNodeTypes.includes(node.type)) {
                 const nameNode = this.findFunctionName(node, grammarName);
@@ -117,24 +134,78 @@ export class CppParser {
                     // The declaration line is where the function node starts
                     const declarationLine = node.startPosition.row;
 
+                    // For C/C++, check if this is an out-of-class method definition
+                    let effectiveClassName = currentClassName;
+                    if (grammarName === 'c' || grammarName === 'cpp') {
+                        const declarator = node.childForFieldName('declarator');
+                        if (declarator && declarator.type === 'function_declarator') {
+                            const identifier = declarator.childForFieldName('declarator');
+                            if (identifier && identifier.type === 'qualified_identifier') {
+                                // This is an out-of-class definition like MyClass::method()
+                                const className = this.getClassNameFromQualifiedIdentifier(identifier);
+                                if (className) {
+                                    effectiveClassName = className;
+                                }
+                            }
+                        }
+                    }
+
                     functions.push({
                         name: nameNode.text,
                         startLine,
                         endLine,
                         lineCount,
-                        declarationLine
+                        declarationLine,
+                        className: effectiveClassName
                     });
                 }
             }
 
-            // Recurse through children
+            // Recurse through children, passing down the class context
             for (const child of node.children) {
-                findFunctions(child);
+                findFunctions(child, currentClassName);
             }
         };
 
         findFunctions(tree.rootNode);
         return functions;
+    }
+
+    private extractMethodNameFromQualifiedIdentifier(qualifiedId: SyntaxNode): SyntaxNode | null {
+        // Extract method name from qualified_identifier (e.g., MyClass::method returns "method")
+        // For nested qualifiers like gdb::debugger::step, recursively search for the identifier
+        for (const child of qualifiedId.children) {
+            if (child.type === 'identifier') {
+                return child;
+            } else if (child.type === 'qualified_identifier') {
+                // Recursively search nested qualified identifiers
+                const nestedName = this.extractMethodNameFromQualifiedIdentifier(child);
+                if (nestedName) {
+                    return nestedName;
+                }
+            }
+        }
+        return null;
+    }
+
+    private getClassNameFromQualifiedIdentifier(qualifiedId: SyntaxNode): string | undefined {
+        // Extract class name from qualified_identifier (e.g., MyClass::method or ns::MyClass::method)
+        // For nested qualifiers like gdb::debugger::step, we want the innermost namespace_identifier
+        let className: string | undefined = undefined;
+
+        for (const child of qualifiedId.children) {
+            if (child.type === 'namespace_identifier') {
+                className = child.text;
+            } else if (child.type === 'qualified_identifier') {
+                // Recursively handle nested qualified identifiers
+                const nestedClassName = this.getClassNameFromQualifiedIdentifier(child);
+                if (nestedClassName) {
+                    className = nestedClassName;
+                }
+            }
+        }
+
+        return className;
     }
 
     private getFunctionBody(node: SyntaxNode, grammarName: string): SyntaxNode | null {
@@ -175,14 +246,19 @@ export class CppParser {
                 if (current.type === 'function_declarator') {
                     const identifier = current.childForFieldName('declarator');
                     if (identifier) {
-                        if (identifier.type === 'identifier') {
+                        // Handle qualified identifiers (e.g., MyClass::method or ns::MyClass::method)
+                        if (identifier.type === 'qualified_identifier') {
+                            return this.extractMethodNameFromQualifiedIdentifier(identifier);
+                        }
+                        // Accept both identifier and field_identifier (for class methods)
+                        if (identifier.type === 'identifier' || identifier.type === 'field_identifier') {
                             return identifier;
                         }
                         current = identifier;
                     } else {
                         break;
                     }
-                } else if (current.type === 'identifier') {
+                } else if (current.type === 'identifier' || current.type === 'field_identifier') {
                     return current;
                 } else if (current.type === 'pointer_declarator' ||
                            current.type === 'reference_declarator') {

@@ -41,13 +41,18 @@ Highlights functions with distinct pastel colors across multiple programming lan
 ## Using the Function List Sidebar
 
 1. Click the **Function Highlight** icon in the Activity Bar (left sidebar)
-2. The Functions panel shows all functions in the current file
+2. The Functions panel shows all functions in the current file organized hierarchically:
+   - **Classes/Namespaces** appear as collapsible groups (e.g., `MyClass (3 functions)`)
+   - **Methods** are nested under their class/namespace
+   - **Global functions** appear at the root level
 3. Each function displays:
    - Color-coded numbered icon (1-10) matching the gutter color
    - Function name
    - Line count (e.g., "25 lines")
 4. Click any function to jump to its declaration
 5. Use the refresh button (↻) to manually update the list
+
+**Note**: The tree view automatically groups methods by their containing class or namespace for better organization.
 
 ## Configuration
 
