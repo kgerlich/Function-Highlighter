@@ -1,8 +1,8 @@
 {
   "name": "function-highlighter",
   "displayName": "Function Highlighter",
-  "version": "0.10.0",
-  "description": "Highlights C/C++ functions with distinct pastel colors",
+  "version": "0.12.0",
+  "description": "Highlights functions with distinct pastel colors across multiple languages (C/C++, Python, JavaScript, TypeScript, Java, Rust, Go, Ruby, PHP, C#, Bash)",
   "publisher": "KlausGerlicher",
   "repository": {
     "type": "git",
@@ -17,7 +17,19 @@
   ],
   "activationEvents": [
     "onLanguage:c",
-    "onLanguage:cpp"
+    "onLanguage:cpp",
+    "onLanguage:python",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
+    "onLanguage:java",
+    "onLanguage:rust",
+    "onLanguage:go",
+    "onLanguage:ruby",
+    "onLanguage:php",
+    "onLanguage:csharp",
+    "onLanguage:bash"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -29,25 +41,13 @@
           "default": true,
           "description": "Enable function highlighting"
         },
-        "functionHighlight.minLines": {
-          "type": "number",
-          "default": 5,
-          "description": "Minimum function length (lines) for minimum brightness"
-        },
-        "functionHighlight.maxLines": {
-          "type": "number",
-          "default": 100,
-          "description": "Maximum function length (lines) for maximum brightness"
-        },
-        "functionHighlight.baseColor": {
-          "type": "string",
-          "default": "#ffff00",
-          "description": "Base color for highlighting (yellow by default)"
-        },
-        "functionHighlight.borderWidth": {
-          "type": "number",
-          "default": 5000,
-          "description": "Width of left/right borders in pixels (large value creates full coverage)"
+        "functionHighlight.disabledLanguages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of language IDs to disable highlighting for. Use this to exclude specific languages while keeping highlighting enabled for others. Example: [\"javascript\", \"python\"]. Available language IDs: c, cpp, python, javascript, typescript, typescriptreact, javascriptreact, java, rust, go, ruby, php, csharp, bash"
         }
       }
     }
@@ -60,7 +60,24 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
-  "keywords": ["c", "cpp", "highlight", "function"],
+  "keywords": [
+    "c",
+    "cpp",
+    "python",
+    "javascript",
+    "typescript",
+    "java",
+    "rust",
+    "go",
+    "ruby",
+    "php",
+    "csharp",
+    "bash",
+    "highlight",
+    "function",
+    "syntax",
+    "tree-sitter"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -72,6 +89,17 @@
     "yo": "^5.1.0"
   },
   "dependencies": {
+    "tree-sitter-bash": "^0.25.0",
+    "tree-sitter-c": "^0.24.1",
+    "tree-sitter-c-sharp": "^0.23.1",
+    "tree-sitter-go": "^0.25.0",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-php": "^0.24.2",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-ruby": "^0.23.1",
+    "tree-sitter-rust": "^0.24.0",
+    "tree-sitter-typescript": "^0.23.2",
     "web-tree-sitter": "^0.25.10"
   }
 }

@@ -72,7 +72,7 @@ function clearDecorations(documentUri: string) {
     }
 }
 
-function updateDecorations(editor: vscode.TextEditor) {
+async function updateDecorations(editor: vscode.TextEditor) {
     console.log('updateDecorations called');
     const config = vscode.workspace.getConfiguration('functionHighlight');
     const enabled = config.get<boolean>('enabled', true);
@@ -87,9 +87,19 @@ function updateDecorations(editor: vscode.TextEditor) {
     const languageId = document.languageId;
     console.log(`Document language: ${languageId}`);
 
-    // Only process C/C++ files
-    if (languageId !== 'c' && languageId !== 'cpp') {
-        console.log('Not a C/C++ file, skipping');
+    // Check if this language is disabled
+    const disabledLanguages = config.get<string[]>('disabledLanguages', []);
+    if (disabledLanguages.includes(languageId)) {
+        console.log(`Language ${languageId} is disabled in settings, skipping`);
+        clearDecorations(document.uri.toString());
+        return;
+    }
+
+    // Try to set the language for the parser
+    const languageSupported = await parser.setLanguage(languageId);
+    if (!languageSupported) {
+        console.log(`Language ${languageId} not supported, skipping`);
+        clearDecorations(document.uri.toString());
         return;
     }
 
@@ -108,13 +118,13 @@ function updateDecorations(editor: vscode.TextEditor) {
             return;
         }
 
-        // Get configuration
+        // Use fixed defaults
         const colorConfig: ColorConfig = {
-            baseColor: config.get<string>('baseColor', '#ffff00'),
-            minLines: config.get<number>('minLines', 5),
-            maxLines: config.get<number>('maxLines', 100)
+            baseColor: '#ffff00',
+            minLines: 5,
+            maxLines: 100
         };
-        const borderWidth = config.get<number>('borderWidth', 4);
+        const borderWidth = 5000;
 
         // Detect theme type
         const isDarkTheme = isDarkColorTheme();
